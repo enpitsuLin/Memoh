@@ -131,7 +131,7 @@ const navItems = computed(() => [
     icon: ['fas', 'chart-line'],
   },
   {
-    title: t('sidebar.settings'),
+    title: t('sidebar.profile'),
     name: 'profile',
     icon: ['fas', 'gear'],
   },

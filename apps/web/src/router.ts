@@ -116,7 +116,7 @@ const routes = [
       {
         name: 'profile',
         path: 'profile',
-        component: () => import('@/pages/settings/index.vue'),
+        component: () => import('@/pages/profile/index.vue'),
         meta: {
           breadcrumb: i18nRef('sidebar.settings'),
         },
