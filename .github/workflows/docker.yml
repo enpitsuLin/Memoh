@@ -160,7 +160,7 @@ jobs:
           retention-days: 1
 
   merge:
-    name: publish ${{ matrix.image }}${{ matrix.variant_label != '' && format(' ({0})', matrix.variant_label) || '' }}
+    name: publish ${{ matrix.image }}${{ matrix.variant != '' && format(' ({0})', matrix.variant) || '' }}
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/v') || startsWith(github.ref, 'refs/tags/') || github.event_name == 'release')
     needs: build
@@ -169,34 +169,22 @@ jobs:
         include:
           - image: server
             artifact_key: server
-            variant_label: ""
-            raw_tag_prefix: ""
-            tag_suffix: ""
+            variant: ""
           - image: web
             artifact_key: web
-            variant_label: ""
-            raw_tag_prefix: ""
-            tag_suffix: ""
+            variant: ""
           - image: browser
             artifact_key: browser
-            variant_label: ""
-            raw_tag_prefix: ""
-            tag_suffix: ""
+            variant: ""
           - image: browser
             artifact_key: browser-chromium
-            variant_label: chromium
-            raw_tag_prefix: "chromium-"
-            tag_suffix: "-chromium"
+            variant: chromium
           - image: browser
             artifact_key: browser-firefox
-            variant_label: firefox
-            raw_tag_prefix: "firefox-"
-            tag_suffix: "-firefox"
+            variant: firefox
           - image: sparse
             artifact_key: sparse
-            variant_label: ""
-            raw_tag_prefix: ""
-            tag_suffix: ""
+            variant: ""
     steps:
       - name: Download digests
         uses: actions/download-artifact@v4
@@ -221,27 +209,59 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            memohai/${{ matrix.image }}
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
-          tags: |
-            type=raw,value=${{ matrix.raw_tag_prefix }}dev,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=${{ matrix.raw_tag_prefix }}${{ github.ref_name }}-dev,enable=${{ startsWith(github.ref, 'refs/heads/v') }}
-            type=raw,value=${{ matrix.raw_tag_prefix }}latest,enable=${{ github.event_name == 'release' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref_name, '-')) }}
-            type=ref,event=pr
-            type=semver,pattern={{version}}${{ matrix.tag_suffix }}
-            type=semver,pattern={{major}}.{{minor}}${{ matrix.tag_suffix }}
-            type=semver,pattern={{major}}${{ matrix.tag_suffix }}
+      - name: Resolve publish config
+        id: publish
+        run: |
+          IMAGE="memohai/${{ matrix.image }}"
+          GHCR_IMAGE="ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
+          REF_NAME="${{ github.event_name == 'release' && github.event.release.tag_name || github.ref_name }}"
+          VERSION="${REF_NAME#v}"
+          BASE_VERSION="${VERSION%%-*}"
+          MAJOR_MINOR="${BASE_VERSION%.*}"
+          MAJOR="${BASE_VERSION%%.*}"
+          VARIANT="${{ matrix.variant }}"
+          TAG_ARGS=""
+
+          add_tag() {
+            local tag="$1"
+            TAG_ARGS="$TAG_ARGS -t ${IMAGE}:${tag} -t ${GHCR_IMAGE}:${tag}"
+          }
+
+          if [ -n "$VARIANT" ]; then
+            VERSION_TAG_SUFFIX="-$VARIANT"
+            DEV_TAG="${VARIANT}-dev"
+            BRANCH_DEV_TAG="${VARIANT}-${REF_NAME}-dev"
+            LATEST_TAG="${VARIANT}-latest"
+          else
+            VERSION_TAG_SUFFIX=""
+            DEV_TAG="dev"
+            BRANCH_DEV_TAG="${REF_NAME}-dev"
+            LATEST_TAG="latest"
+          fi
+
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            add_tag "$DEV_TAG"
+          fi
+
+          if [[ "$GITHUB_REF" == refs/heads/v* ]]; then
+            add_tag "$BRANCH_DEV_TAG"
+          fi
+
+          if [ "${{ github.event_name }}" = "release" ] || [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            add_tag "${VERSION}${VERSION_TAG_SUFFIX}"
+
+            if [ "$VERSION" = "$BASE_VERSION" ]; then
+              add_tag "$LATEST_TAG"
+              add_tag "${MAJOR_MINOR}${VERSION_TAG_SUFFIX}"
+              add_tag "${MAJOR}${VERSION_TAG_SUFFIX}"
+            fi
+          fi
+
+          echo "tag_args=${TAG_ARGS# }" >> "$GITHUB_OUTPUT"
 
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
           docker buildx imagetools create \
-            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            ${{ steps.publish.outputs.tag_args }} \
             $(printf 'ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}@sha256:%s ' *)
-        env:
-          DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
