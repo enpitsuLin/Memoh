@@ -10960,6 +10960,9 @@ const docTemplate = `{
         "handlers.PingResponse": {
             "type": "object",
             "properties": {
+                "commit_hash": {
+                    "type": "string"
+                },
                 "container_backend": {
                     "type": "string"
                 },
@@ -10967,6 +10970,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "version": {
                     "type": "string"
                 }
             }

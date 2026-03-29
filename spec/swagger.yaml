@@ -1445,11 +1445,15 @@ definitions:
     type: object
   handlers.PingResponse:
     properties:
+      commit_hash:
+        type: string
       container_backend:
         type: string
       snapshot_supported:
         type: boolean
       status:
+        type: string
+      version:
         type: string
     type: object
   handlers.ProbeResponse:

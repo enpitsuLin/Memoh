@@ -118,7 +118,10 @@
     "themeLight": "浅色",
     "themeDark": "深色",
     "langZh": "中文",
-    "langEn": "English"
+    "langEn": "English",
+    "version": "版本",
+    "versionTag": "v{version}",
+    "commitHash": "提交"
   },
   "chat": {
     "greeting": "你好！有什么我可以帮你的吗？",

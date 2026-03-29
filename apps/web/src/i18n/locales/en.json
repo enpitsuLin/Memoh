@@ -122,7 +122,10 @@
     "themeLight": "Light",
     "themeDark": "Dark",
     "langZh": "中文",
-    "langEn": "English"
+    "langEn": "English",
+    "version": "Version",
+    "versionTag": "v{version}",
+    "commitHash": "Commit"
   },
   "chat": {
     "greeting": "Hi! How can I help you today?",

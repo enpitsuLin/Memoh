@@ -878,9 +878,11 @@ export type HandlersModelTokenUsage = {
 };
 
 export type HandlersPingResponse = {
+    commit_hash?: string;
     container_backend?: string;
     snapshot_supported?: boolean;
     status?: string;
+    version?: string;
 };
 
 export type HandlersProbeResponse = {
