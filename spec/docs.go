@@ -10975,6 +10975,17 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.ContainerGPURequest": {
+            "type": "object",
+            "properties": {
+                "devices": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "handlers.ContextUsage": {
             "type": "object",
             "properties": {
@@ -10989,6 +11000,9 @@ const docTemplate = `{
         "handlers.CreateContainerRequest": {
             "type": "object",
             "properties": {
+                "gpu": {
+                    "$ref": "#/definitions/handlers.ContainerGPURequest"
+                },
                 "image": {
                     "type": "string"
                 },
@@ -11003,6 +11017,12 @@ const docTemplate = `{
         "handlers.CreateContainerResponse": {
             "type": "object",
             "properties": {
+                "cdi_devices": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "container_id": {
                     "type": "string"
                 },
@@ -11194,6 +11214,12 @@ const docTemplate = `{
         "handlers.GetContainerResponse": {
             "type": "object",
             "properties": {
+                "cdi_devices": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "container_id": {
                     "type": "string"
                 },
